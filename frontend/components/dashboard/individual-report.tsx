@@ -13,8 +13,16 @@ export function IndividualReport() {
   const [interactions, setInteractions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/allocations')
+useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    const email = localStorage.getItem("userEmail");
+    
+    let url = 'http://localhost:5000/api/allocations';
+    if (role === 'mentor' && email) {
+      url += `?email=${encodeURIComponent(email)}`;
+    }
+
+    fetch(url)
       .then(r => r.json())
       .then(data => setPairs(data.map((a: any) => ({
         id: String(a.id),

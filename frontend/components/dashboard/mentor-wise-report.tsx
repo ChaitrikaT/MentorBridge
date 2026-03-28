@@ -13,14 +13,21 @@ export function MentorWiseReport() {
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/reports/mentorwise')
+useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    const email = localStorage.getItem("userEmail");
+    
+    let url = 'http://localhost:5000/api/reports/mentorwise';
+    if (role === 'mentor' && email) {
+      url += `?email=${encodeURIComponent(email)}`;
+    }
+
+    fetch(url)
       .then(r => r.json())
       .then(data => { setMentorData(data); setLoading(false) })
       .catch(() => {
         setMentorData([
           { id: 1, name: "Dr. Kavitha Rao", department: "AI & ML", mentee_count: 2, total_interactions: 2, last_active: "2026-03-20" },
-          { id: 2, name: "Prof. Anand Bhat", department: "AI & ML", mentee_count: 2, total_interactions: 1, last_active: "2026-03-25" },
         ])
         setLoading(false)
       })

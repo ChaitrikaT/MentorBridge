@@ -37,8 +37,16 @@ export function ConsolidatedListTable() {
   const [selectedYear, setSelectedYear] = useState("All Years")
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/allocations')
+useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    const email = localStorage.getItem("userEmail");
+    
+    let url = 'http://localhost:5000/api/allocations';
+    if (role === 'mentor' && email) {
+      url += `?email=${encodeURIComponent(email)}`;
+    }
+
+    fetch(url)
       .then(r => r.json())
       .then(data => {
         setRecords(data.map((a: any) => ({
@@ -53,6 +61,7 @@ export function ConsolidatedListTable() {
         setLoading(false)
       })
       .catch(() => {
+        // YOUR ORIGINAL FALLBACK IS BACK!
         setRecords([
           { id: "1", mentorName: "Dr. Kavitha Rao", department: "AI & ML", menteeName: "Aditya Sharma", academicYear: "1st Year", lastInteractionDate: "2026-03-20", status: "Active" },
           { id: "2", mentorName: "Prof. Anand Bhat", department: "AI & ML", menteeName: "Rahul Menon", academicYear: "2nd Year", lastInteractionDate: "2026-03-25", status: "Active" },

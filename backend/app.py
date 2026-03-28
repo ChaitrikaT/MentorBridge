@@ -32,8 +32,10 @@ def get_mentees():
 # ─── ALLOCATIONS ───────────────────────────────────────
 @app.route('/api/allocations', methods=['GET'])
 def get_allocations():
+    email = request.args.get('email') # Check who is asking!
     db = get_db()
-    allocations = db.execute('''
+    
+    query = '''
         SELECT a.id, mr.name as mentor_name, mr.department,
                me.name as mentee_name, me.academic_year, a.status,
                MAX(i.date) as last_interaction
@@ -41,9 +43,20 @@ def get_allocations():
         JOIN mentors mr ON a.mentor_id = mr.id
         JOIN mentees me ON a.mentee_id = me.id
         LEFT JOIN interactions i ON a.id = i.allocation_id
-        GROUP BY a.id
-    ''').fetchall()
+    '''
+    params = []
+    
+    # If an email is provided, only return that specific mentor's students!
+    if email:
+        query += ' WHERE mr.email = ?'
+        params.append(email)
+        
+    query += ' GROUP BY a.id'
+    
+    allocations = db.execute(query, params).fetchall()
     return jsonify([dict(a) for a in allocations])
+
+# ... Keep your POST /api/allocations and interactions stuff exactly the same ...
 
 @app.route('/api/allocations', methods=['POST'])
 def add_allocation():
@@ -92,24 +105,39 @@ def mentor_report(mentor_id):
         ORDER BY i.date DESC
     ''', [mentor_id]).fetchall()
     return jsonify([dict(d) for d in data])
+
 @app.route('/api/ai/insights', methods=['GET'])
 def ai_insights():
     import json
     from datetime import datetime, date
+    import os
 
+    # 1. Check who is asking (Admin vs Mentor)
+    email = request.args.get('email') 
     db = get_db()
-    allocations = db.execute('''
+    
+    # 2. Build the query
+    query = '''
         SELECT mr.name as mentor_name, me.name as mentee_name,
                MAX(i.date) as last_interaction, a.id
         FROM allocations a
         JOIN mentors mr ON a.mentor_id = mr.id
         JOIN mentees me ON a.mentee_id = me.id
         LEFT JOIN interactions i ON a.id = i.allocation_id
-        GROUP BY a.id
-    ''').fetchall()
+    '''
+    params = []
+    
+    # 3. Filter if it's a mentor logging in
+    if email:
+        query += ' WHERE mr.email = ?'
+        params.append(email)
+        
+    query += ' GROUP BY a.id'
 
+    allocations = db.execute(query, params).fetchall()
     data = [dict(a) for a in allocations]
 
+    # 4. Your original Fallback function (untouched!)
     def generate_fallback(data):
         today = date(2026, 3, 28)
         suggestions = {
@@ -152,6 +180,7 @@ def ai_insights():
             })
         return result
 
+    # 5. Your original Groq logic (untouched!)
     try:
         from groq import Groq
         client = Groq(api_key=os.getenv('GROQ_API_KEY'))
@@ -180,7 +209,7 @@ Format: [{{"mentor_name":"X","mentee_name":"Y","last_interaction":"date","status
     except Exception as e:
         print(f"Groq failed: {e} — using smart fallback")
         return jsonify(generate_fallback(data))
-    
+        
 @app.route('/api/reports/yearwise', methods=['GET'])
 def yearwise_report():
     db = get_db()
@@ -196,8 +225,10 @@ def yearwise_report():
 
 @app.route('/api/reports/mentorwise', methods=['GET'])
 def mentorwise_report():
+    email = request.args.get('email') # Check who is asking!
     db = get_db()
-    data = db.execute('''
+    
+    query = '''
         SELECT mr.id, mr.name, mr.department,
                COUNT(DISTINCT a.mentee_id) as mentee_count,
                COUNT(i.id) as total_interactions,
@@ -205,8 +236,17 @@ def mentorwise_report():
         FROM mentors mr
         LEFT JOIN allocations a ON mr.id = a.mentor_id
         LEFT JOIN interactions i ON a.id = i.allocation_id
-        GROUP BY mr.id
-    ''').fetchall()
+    '''
+    params = []
+    
+    # Filter for specific mentor if email is provided
+    if email:
+        query += ' WHERE mr.email = ?'
+        params.append(email)
+        
+    query += ' GROUP BY mr.id'
+    
+    data = db.execute(query, params).fetchall()
     return jsonify([dict(d) for d in data])
 
 # ─── PDF REPORTS ───────────────────────────────────────

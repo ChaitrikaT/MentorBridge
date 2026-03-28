@@ -61,8 +61,20 @@ export function AIInsightsGrid() {
     setIsRefreshing(true)
     setError(null)
     try {
-      const response = await fetch('http://localhost:5000/api/ai/insights')
+      // Grab role and email from local storage
+      const role = localStorage.getItem("userRole");
+      const email = localStorage.getItem("userEmail");
+      
+      // Build the URL based on who is logged in
+      let url = 'http://localhost:5000/api/ai/insights';
+      if (role === 'mentor' && email) {
+        url += `?email=${encodeURIComponent(email)}`;
+      }
+
+      const response = await fetch(url)
+      if (!response.ok) throw new Error("Network response was not ok")
       const data = await response.json()
+      
       setInsights(data.map((item: any) => ({
         id: String(item.id || Math.random()),
         menteeName: item.mentee_name,

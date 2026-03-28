@@ -40,17 +40,25 @@ export function InteractionForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch mentees from Flask on load
-  useEffect(() => {
-    fetch('http://localhost:5000/api/mentees')
+useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    const email = localStorage.getItem("userEmail");
+    
+    let url = 'http://localhost:5000/api/allocations';
+    if (role === 'mentor' && email) {
+      url += `?email=${encodeURIComponent(email)}`;
+    }
+
+    fetch(url)
       .then(r => r.json())
-      .then(data => setMentees(data.map((m: any) => ({
-        id: String(m.id),
-        name: m.name,
-        year: m.academic_year,
-        department: m.department
+      .then(data => setMentees(data.map((a: any) => ({
+        id: String(a.id), 
+        name: a.mentee_name,
+        year: a.academic_year,
+        department: a.department
       }))))
       .catch(() => {
-        // Fallback to sample data if Flask not running
+        // YOUR ORIGINAL FALLBACK IS BACK!
         setMentees([
           { id: "1", name: "Aditya Sharma", year: "1st Year", department: "AI & ML" },
           { id: "2", name: "Sneha Patel", year: "1st Year", department: "AI & ML" },
@@ -59,7 +67,7 @@ export function InteractionForm() {
         ])
       })
   }, [])
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
