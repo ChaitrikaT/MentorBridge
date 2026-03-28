@@ -133,9 +133,7 @@ Get a free Groq API key at: https://console.groq.com
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | admin@sahyadri.edu.in | any |
-| Mentor | deeksha@sahyadri.edu.in | any |
-| Mentor | chaithrika@sahyadri.edu.in | any |
-| Mentor | soumya@sahyadri.edu.in | any |
+| Mentor | mentorname@sahyadri.edu.in | any |
 
 > Note: Authentication is role-based for demo. Any password works.
 
